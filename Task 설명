@@ -1,0 +1,314 @@
+Task 064 : Kits 데이터에 kidney 라벨 - 냥대 CT Kindey 이상하게 나옴
+Task 102 : 한양대 CT에 bladder 라벨게 - 냥대 CT Bladder 매우 잘나옴
+
+Task 106 : Kits, 한양대 CT 둘 다 절반씩 잘림
+
+Task 107 : 한양대만 절반 잘림 - 냥대 CT Kindey 조금 나옴 / all fold로 새로 돌리는중 -c
+Task 108 : 둘 다 채워진 영상
+
+Task 109 : Task 107에서 test셋 재정립 - 냥대 CT Kindey 아예 안나옴 /
+Task 110 : Task 108에서 test셋 재정립 - 냥대 CT Kindey 아예 안나옴 /
+
+Task 111 : Task 107에서 Kidney 라벨링된 영역만 추가 (300~433) - test셋 109처럼 재정립 - 냥대 CT Kindey sensitivity는 높은데(1을 1이라고함) 정확도는 낮음(0도 1이라함)
+Task 112 : Task 107에서 Kidney 라벨링된 영역만 추가 (300~433) - test셋 107처럼
+
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+
+Task 113 : Task 107에서 Kidney 라벨링된 영역만 추가 (300~450) - test셋 109처럼 재정립 - 성능 최고 이때까지 중에 제일 좋음
+Task 115 : Task 113 - test셋 107처럼 - 113과 별 차이 없
+Task 116 : Task 113에서 KiTS19 제거 - 113과 별 차이 없음
+
+Task 117 : Task 113에서 bladder부분 full image
+
+
+Task 120 : Ureter만 (햔양대 CT만)
+
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+
+Task 121 : 3종류 (Urinary) (햔양대 CT만) - Kidney 4, Bladder 2, Ureter 1
+Task 122 : 3종류 (Urinary) (햔양대 CT만) - Kidney 1, Bladder 2, Ureter 3
+
+
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+이때까지 labelTs 잘못 넣어주고 있었다;;
+학습전에 nnUNet_plan_and_preprocess에서 --verify_dataset_integrity 꼭 해주자
+
+Task 123 : Ureter만 (한양대 CT만) + 239 문제 해결
+Task 124 : Urinary - Ureter 1, Bladder 2, Kidney 4
+
+-------------------------------------------------------------------------------------------------------
+
+Task 125 : Ureter만 + 123에서 5 fold 추가
+**Task 126 : Urinary 데이터셋 잘못된거 다시 잡기(240 case~ bladder, Ureter 라벨링 잘못됌) + 5 fold
+
+-------------------------------------------------------------------------------------------------------
+
+Task 127 : Task 126에서 Kidney 부분 ~150까지만 학습하기 (not yet
+** Task 128 : Task 126에서 신장부분 inference 결과를 GT로 가정해서 학습하기 (fold 4)
+Task 129 : Task 126에서 전체 150개만 학습데이터로 학
+
+-------------------------------------------------------------------------------------------------------
+
+--------- 여기서부터가 진짜 제대로 된 성과가 나온다고 보면 됌 (fold 4 제대로 적용하고 성능 향상된 순간) -----------------
+
+-------------------------------------------------------------------------------------------------------
+
+** Task 130 : Task 125에서 fold 4 추가
+Task 131 : Bladder만 1로 바꿔서 학습
+
+-------------------------------------------------------------------------------------------------------
+
+Task 132 : Task 126(신장 ~151까지)에서 3가지 branch로 학습하기 (신장 test를 위해 test셋 변경 (30~270까지 학습))
+** Task 133 : Task 128(신장 전체 라벨링)으로 3가지 branch로 학습하기 (신장 test셋 ~240)
+
+-------------------------------------------------------------------------------------------------------
+
+Task 134 : 신장만 가지고 학습 (train (30~152) + test(:30))
+Task 135 : Task 132와 똑같은데 (신장 test셋 ~240으로 동일하게 맞추기)
+Task 135 : 신장만 가지고 학습 (train_151)
+Task 136 : Task 135를 transpose함( train ~152 + test KiTS19)
+
+-------------------------------------------------------------------------------------------------------
+
+* Task 137 : Task 133에서 U = 0.9
+Task 138 : Task 133에서 seg_output1,2,3 채널 2개로해서 연산량 줄이기 실험
+* Task 139 : Task 133에서 U = 0.8
+
+-------------------------------------------------------------------------------------------------------
+
+*Task 140 : Task 130(Ureter만)에서 Residual로 네트워크 변경
+**Task 141 : Task 130(Ureter만)에서 Dense로 네트워크 변경
+
+-------------------------------------------------------------------------------------------------------
+
+HasTrainer_DP_dense : 좀 이상하게 구현됌(블록 내부에서 빼와서 concat) (64 -> 1024)
+HasTrainer_DP_dense_2 : small 버전 구현 (32 -> 512)
+**HasTrainer_DP_dense_3 : original DenseUNet (32 -> 512)
+
+-------------------------------------------------------------------------------------------------------
+
+Task 142 : Task 141에서 DropOut 추가 x // Att dense modify (channel different)
+Task 143 : Att dense 구현
+
+*Task 144 : Att dense (Leaky ReLU modify)
+
+-------------------------------------------------------------------------------------------------------
+
+Task 145 : Att Block
+*Task 146 : Att Block(Sigmoid 대신 Leaky ReLU)
+Task 147 : Att Block(Sum = Sum * 1.5로 attention을 더 짙게하기)
+
+Task 148 : Att Block -> residual decoder / faster converge
+Task 149 : Att Block -> attention coefficient 1.5
+Task 149 : Dense 3 branch (HasTrainer_dense_3_branch)
+**Task 149 : IC-Dilated Conv  (3d_fullres  HasTrainer_DP_IC_dense Task149_Ureter 4 -gpu 1 -p nnUNetPlans_Att_DenseUNet_v2.1_2 -c)
+
+-------------------------------------------------------------------------------------------------------
+
+Task 150 : Bladder Att Block(Task 146으로 학습해보기)
+
+-------------------------------------------------------------------------------------------------------
+
+*Task 151 : Dilated 2 (Dense)   (3d_fullres  HasTrainer_DP_IC_dense Task151_Ureter 4 -gpu 1 -p nnUNetPlans_Dilated_DenseUNet_v2.1_2)
+
+*** Task 152 : Dense-Dilated Conv  (3d_fullres HasTrainer_DP_D_dense Task152_Ureter 4 -gpu 4 -p nnUNetPlans_Dilated_DenseUNet_v2.1_2 -c) - inf
+
+Task 152 : Dense lower channel (Dense modify) 실험 (3d_fullres HasTrainer_DP_modify_dense Task152_Ureter 4 -gpu 4 -p nnUNetPlans_modify_DenseUNet_v2.1_2)
+Task 152 : Dense higher channel (Dense modify) 실험 (3d_fullres HasTrainer_DP_high_dense Task152_Ureter 4 -gpu 4 -p nnUNetPlans_modify_DenseUNet_v2.1_2)
+
+*Task 152 : Dilated 3 (Dense)  (3d_fullres HasTrainer_DP_Dilated_dense Task152_Ureter 4 -gpu 4 -p nnUNetPlans_Dilated_DenseUNet_v2.1_2)
+
+-------------------------------------------------------------------------------------------------------
+
+**Task 152 : dense_first 수정 + UNet ++ (3d_fullres HasTrainer_DP_D_dense_plus Task152_Ureter 4 -gpu 4 -p nnUNetPlans_D_Dense_plus_v2.1_2)
+        - inference : (-i /data5/sukmin/CT_2_inference6_test_60 -o /data5/sukmin/CT_2_inference_rst_152_DD_plus -t Task152_Ureter -tr HasTrainer_DP_D_dense_plus -m 3d_fullres -chk model_best -f 4 -p  nnUNetPlans_D_Dense_plus_v2.1_2)
+
+**Task 153 : dense_first 수정 x + UNet ++ (3d_fullres HasTrainer_DP_D_dense_plus Task153_Ureter 4 -gpu 4 -p nnUNetPlans_D_Dense_plus_v2.1_2)
+        -
+
+-------------------------------------------------------------------------------------------------------
+
+Task 155 : new Datasets (3D Labeling with AVIEW) + Dense -5    (3d_fullres  HasTrainer_DP_dense_3 Task155_Ureter 4 -gpu 4 -p nnUNetPlans_DenseUNet_v2.1_2 -c)
+
+Task 156 : 같은 개수(72개)의 동일한 조건으로 기존 데이터셋에 Dense로 학습 (빠르게 확인하기 위해)    (3d_fullres  HasTrainer_DP_dense_3 Task156_Ureter 4 -gpu 4 -p nnUNetPlans_DenseUNet_v2.1_2 -c)
+        - inference : (-i /data5/sukmin/CT_2_inference6_test_10 -o /data5/sukmin/CT_2_inference_rst_156 -t Task156_Ureter -tr HasTrainer_DP_dense_3 -m 3d_fullres -chk model_best -f 4 -p  nnUNetPlans_DenseUNet_v2.1_2)
+        - -t 155 -pl3d ExperimentPlanner3DDenseUNet_v21_2
+
+Task 157 : AVIEW reverse
+Task 158 : AVIEW 재정립
+
+-------------------------------------------------------------------------------------------------------
+
+* Task 159 : 기존 Dataset wrong 제거 후 학습 ( 3d_fullres HasTrainer_DP_D_dense Task159_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2 )
+        - -t 159 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+
+
+Task 160 : Task 152_DD_plus에서 UNet++ 부분 conv를 좀 약하게 짜보자(그냥 일반적인 conv 사용)
+
+-------------------------------------------------------------------------------------------------------
+
+** Task 172 : Task 159 + Task 171 (총 251 케이스)
+
+-------------------------------------------------------------------------------------------------------
+
+Task 190 : 111 case added (1mm)
+Task 191 : 111 case added (5mm)
+** Task 192 : Task 172 + Task 191 (총 362 케이스)
+        - -t 192 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+        - 3d_fullres HasTrainer_DP_D_dense Task192_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2 -c
+        - -i /data2/sukmin/CT_2_inference6_test_73 -o /data2/sukmin/CT_2_inference_rst_192_t73_2 -t Task192_Ureter -tr HasTrainer_DP_D_dense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+** Task 192 : Task 172 + Task 191 (총 362 케이스) - UNETR
+        - -t 192 -pl3d ExperimentPlanner_UNETR
+        - 3d_fullres HasTrainer_DP_UNETR Task192_Ureter 4 -gpu 4 -p nnUNetPlans_UNETR
+        -i /data2/sukmin/CT_2_inference6_test_73 -o /data2/sukmin/CT_2_inference_rst_192_t73_UNETR -t Task192_Ureter -tr HasTrainer_DP_UNETR -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_UNETR
+-------------------------------------------------------------------------------------------------------
+
+** Task 195 : (69 + 111) case 1mm
+         - -t 195 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+        - 3d_fullres HasTrainer_DP_D_dense Task195_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2 -c
+
+
+Task 193 : Task 192 UNETR -> patch (16,16,16) -> (40,40,10)
+
+-------------------------------------------------------------------------------------------------------
+
+Task 200 : Test
+        - -t 200 -pl3d ExperimentPlanner_UNETR
+        - 3d_fullres HasTrainer_DP_UNETR Task200_Ureter 4 -gpu 1 -p nnUNetPlans_UNETR
+
+-------------------------------------------------------------------------------------------------------
+
+Task 206 : test셋 맞춰서 5mm 학습
+        -t 206 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+        -i /data5/sukmin/CT_2_inference6_test_73 -o /data5/sukmin/CT_2_inference_rst_205 -t Task205_Ureter -tr HasTrainer_DP_D_dense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+        -i /data5/sukmin/CT_2_inference6_test_51 -o /data5/sukmin/CT_2_inference_rst_206_t51 -t Task206_Ureter -tr HasTrainer_DP_D_dense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+-------------------------------------------------------------------------------------------------------
+
+* Task 209 : IPIU 작성용 -> Task 133 때 쓴 300 case Urinary 데이터셋을 DDense로 구현
+
+        -t 209 -pl3d ExperimentPlanner_DDense_Multi_Task (batch 4)
+        3d_fullres HasTrainer_DP_DDense_3_branch Task209_Urinary 4 -gpu 4 -p nnUNetPlans_DDense_Multi_Task
+
+
+        batch 4 DDense
+        nnUNetPlans_Dilated_DenseUNet_v2.1_2
+
+
+-------------------------------------------------------------------------------------------------------
+
+** Task 210 : Rotate + 정렬 및 테스트셋 확정 마친 5mm Ureter
+        -t 210 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+        -i /data5/sukmin/CT_2_inference6_test_69_rt -o /data5/sukmin/CT_2_inference_rst_210 -t Task210_Ureter -tr HasTrainer_DP_D_dense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+        3d_fullres HasTrainer_DP_D_dense Task210_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+        -t 210 -pl3d nnUNetPlans_UNETR
+        3d_fullres HasTrainer_DP_UNETR Task210_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+
+** Task 211 : 210의 1mm 버전
+
+        -i /data5/sukmin/CT_2_inference6_test_69_rt_1mm -o /data5/sukmin/CT_2_inference_rst_211 -t Task211_Ureter -tr HasTrainer_DP_D_dense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+
+Task 212 : flip LR -> already doing that
+
+** Task 213 : nnUNetTrainerV2_DA3 trianing
+
+
+
+
+
+
+
+* Task 220 : Task 213 + Task 159 (lask datasets)
+** Task 221 : Task 220 with no mirroring
+    -t 221 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+    -t 221 -pl3d ExperimentPlanner_SDDUNet
+
+    3d_fullres HasTrainer_DP_SDDense Task221_Ureter 4 -gpu 4 -p nnUNetPlans_SDDUNet
+    -> Task 221 + DTC (loss*4 + MSE)
+
+
+
+Task 222 : Task 159 with no mirroring
+Task 223 : Task 213 with no mirroring
+
+** Task 235 : Task 221 LR label
+** Task 240 : Task 221 LR + half label
+
+** Task 250 : Task 221 + DTC (loss*1 + boundary loss)
+Task 251 : Task 250(loss*4 + boundary loss) - trash
+
+    -t 250 -pl3d ExperimentPlanner_SDDUNet
+    3d_fullres HasTrainer_DP_SDDense Task250_Ureter 4 -gpu 4 -p nnUNetPlans_SDDUNet
+    -i /data5/sukmin/CT_2_inference6_test_69_rt -o /data5/sukmin/CT_2_inference_rst_250 -t Task250_Ureter -tr HasTrainer_DP_SDDense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_SDDUNet
+
+
+* Task 252 : Task250 + unlabeled CT 100 case
+
+
+
+* Task 253 : Task256 -> DTC loss (erase DTC in label loss)
+Task 254 : Task256 ->
+
+
+----------------------------------------------------------------------------------------------------------
+
+* Task 256 : Task250 + unlabeled CT 100 case -> DTC loss my Plan
+        -t 256 -pl3d ExperimentPlanner_SDDUNet
+        3d_fullres HasTrainer_DP_SDDense Task256_Ureter 4 -gpu 4 -p nnUNetPlans_SDDUNet -c
+
+Task 257 : Task256 -> No DTC loss in supervised
+
+        3d_fullres HasTrainer_DP_SDDense Task257_Ureter 4 -gpu 4 -p nnUNetPlans_SDDUNet -c
+
+
+----------------------------------------------------------------------------------------------------------
+
+* Task 260 : Task221 -> 200 epoch only
+    -t 260 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+    -t 260 -pl3d ExperimentPlanner_SDDUNet
+
+    3d_fullres HasTrainer_DP_D_dense Task260_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+    3d_fullres HasTrainer_DP_SDDense Task260_Ureter 4 -gpu 4 -p nnUNetPlans_SDDUNet
+
+    -i /data5/sukmin/CT_2_inference6_test_69_rt -o /data5/sukmin/CT_2_inference_rst_261 -t Task261_Ureter -tr HasTrainer_DP_D_dense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+    -i /data5/sukmin/CT_2_inference6_test_69_rt -o /data5/sukmin/CT_2_inference_rst_256 -t Task256_Ureter -tr HasTrainer_DP_SDDense -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_SDDUNet
+
+Task261 : Task221 -> flip x, y
+
+* Task 262 : Coordinate Attention * 4 + Tas221
+    -t 262 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21    (192*176*32)
+    3d_fullres HasTrainer_DP_CA_MDD Task262_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+    -i /data5/sukmin/CT_2_inference6_test_69_rt -o /data5/sukmin/CT_2_inference_rst_262 -t Task262_Ureter -tr HasTrainer_DP_CA_MDD -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+
+    3d_fullres HasTrainer_DP_CA_MDD Task262_Ureter 4 -gpu 1 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+
+----------------------------------------------------------------------------------------------------------
+
+*** Task 263 : Coordinate Attention * 1 + Tas221
+    -t 263 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+    3d_fullres HasTrainer_DP_CA_MDD Task263_Ureter 4 -gpu 4 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+
+
+
+* Task 264 : Task 263 + experiment -> CA-MDD
+    -t 264 -pl3d ExperimentPlanner_CADD_UNet             ()
+    3d_fullres HasTrainer_DP_CA_MDD Task264_Ureter 4 -gpu 4 -p nnUNetPlans_CADD_UNet
+    -i /data5/sukmin/CT_2_inference6_test_69_rt -o /data5/sukmin/CT_2_inference_rst_264 -t Task264_Ureter -tr HasTrainer_DP_CA_MDD -m 3d_fullres -chk model_best -f 4 -p nnUNetPlans_CADD_UNet
+
+
+
+
+Task 265 : Task 263 + batch 8
+    -t 265 -pl3d ExperimentPlanner_Double_Dense_3DUNet_v21
+    3d_fullres HasTrainer_DP_CA_MDD Task265_Ureter 4 -gpu 8 -p nnUNetPlans_Double_DenseUNet_v2.1_2
+
+
+Task 266 : Task 263 + batch 16

@@ -1,0 +1,7 @@
+generic_Att_block_UNet.py에서
+
+1. decoder쪽 최종 output을 기존 output 대신 att 결과 (skips[-1)로 대체한다.
+segmentation = self.segmentation_output(skips[-1])    -  294번째 줄
+
+
+2. -- save npz를 응용해서 att 결과가 activation function을 지나기전의 결과를 확인한다.
