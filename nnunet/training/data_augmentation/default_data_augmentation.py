@@ -62,8 +62,11 @@ default_3D_augmentation_params = {
     "gamma_range": (0.7, 1.5),
     "p_gamma": 0.3,
 
-    "do_mirror": True,
+    "do_mirror": False,  # False로 해서 학습해보자
     "mirror_axes": (0, 1, 2),
+    # "do_mirror": True,  # False로 해서 학습해보자
+    # "mirror_axes": (0, 1, 2),
+
 
     "dummy_2D": False,
     "mask_was_used_for_normalization": False,
@@ -79,7 +82,7 @@ default_3D_augmentation_params = {
     "cascade_remove_conn_comp_max_size_percent_threshold": 0.15,
     "cascade_remove_conn_comp_fill_with_other_class_p": 0.0,
 
-    "do_additive_brightness": False,
+    "do_additive_brightness": True,
     "additive_brightness_p_per_sample": 0.15,
     "additive_brightness_p_per_channel": 0.5,
     "additive_brightness_mu": 0.0,

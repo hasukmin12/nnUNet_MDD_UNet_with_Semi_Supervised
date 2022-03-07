@@ -15,9 +15,13 @@
 
 import nnunet
 from nnunet.paths import network_training_output_dir, preprocessing_output_dir, default_plans_identifier
+from nnunet.paths import network_training_output_dir, default_plans_identifier
 from batchgenerators.utilities.file_and_folder_operations import *
 from nnunet.experiment_planning.summarize_plans import summarize_plans
 from nnunet.training.model_restore import recursive_find_python_class
+
+
+
 
 
 def get_configuration_from_output_folder(folder):
@@ -29,6 +33,7 @@ def get_configuration_from_output_folder(folder):
     configuration, task, trainer_and_plans_identifier = folder.split("/")
     trainer, plans_identifier = trainer_and_plans_identifier.split("__")
     return configuration, task, trainer, plans_identifier
+
 
 
 def get_default_configuration(network, task, network_trainer, plans_identifier=default_plans_identifier,
@@ -44,6 +49,7 @@ def get_default_configuration(network, task, network_trainer, plans_identifier=d
     else:
         plans_file = join(preprocessing_output_dir, task, plans_identifier + "_plans_3D.pkl")
 
+    print(plans_file)
     plans = load_pickle(plans_file)
     possible_stages = list(plans['plans_per_stage'].keys())
 
@@ -77,4 +83,13 @@ def get_default_configuration(network, task, network_trainer, plans_identifier=d
 
     print("\nI am using data from this folder: ", join(dataset_directory, plans['data_identifier']))
     print("###############################################")
+
+    print(plans_file)
+    print(output_folder_name)
+    print(dataset_directory)
+    print(batch_dice)
+    print(stage)
+    print(trainer_class)
+
+
     return plans_file, output_folder_name, dataset_directory, batch_dice, stage, trainer_class

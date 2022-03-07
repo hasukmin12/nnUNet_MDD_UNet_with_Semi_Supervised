@@ -164,6 +164,7 @@ class SoftDiceLoss(nn.Module):
         self.do_bg = do_bg
         self.batch_dice = batch_dice
         self.apply_nonlin = apply_nonlin
+
         self.smooth = smooth
 
     def forward(self, x, y, loss_mask=None):

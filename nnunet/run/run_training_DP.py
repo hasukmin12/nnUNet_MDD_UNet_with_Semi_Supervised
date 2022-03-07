@@ -21,6 +21,7 @@ from nnunet.training.cascade_stuff.predict_next_stage import predict_next_stage
 from nnunet.training.network_training.nnUNetTrainer import nnUNetTrainer
 from nnunet.training.network_training.nnUNetTrainerCascadeFullRes import nnUNetTrainerCascadeFullRes
 from nnunet.utilities.task_name_id_conversion import convert_id_to_task_name
+import pdb
 
 
 def main():
@@ -88,6 +89,14 @@ def main():
 
     args = parser.parse_args()
 
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3,4,5,6,7'
+    # os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+
+
+
+
     task = args.task
     fold = args.fold
     network = args.network
@@ -127,8 +136,14 @@ def main():
     # else:
     #     raise ValueError("force_separate_z must be None, True or False. Given: %s" % force_separate_z)
 
-    plans_file, output_folder_name, dataset_directory, batch_dice, stage, \
-        trainer_class = get_default_configuration(network, task, network_trainer, plans_identifier)
+    plans_file, output_folder_name, dataset_directory, batch_dice, stage, trainer_class = get_default_configuration(network, task, network_trainer, plans_identifier)
+
+
+
+    import time
+    strat_time = time.time()
+
+
 
     if trainer_class is None:
         raise RuntimeError("Could not find trainer class")
@@ -137,14 +152,24 @@ def main():
         assert issubclass(trainer_class, nnUNetTrainerCascadeFullRes), "If running 3d_cascade_fullres then your " \
                                                                        "trainer class must be derived from " \
                                                                        "nnUNetTrainerCascadeFullRes"
-    else:
-        assert issubclass(trainer_class, nnUNetTrainer), "network_trainer was found but is not derived from " \
-                                                         "nnUNetTrainer"
+    # else:
+    #     assert issubclass(trainer_class, nnUNetTrainer), "network_trainer was found but is not derived from " \
+    #                                                      "nnUNetTrainer"
 
     trainer = trainer_class(plans_file, fold, output_folder=output_folder_name,
                             dataset_directory=dataset_directory, batch_dice=batch_dice, stage=stage,
                             unpack_data=decompress_data, deterministic=deterministic,
                             distribute_batch_size=args.dbs, num_gpus=num_gpus, fp16=not fp32)
+
+
+    print("")
+    print("trainer : ", trainer)
+    print("epoch goes", trainer.max_num_epochs)
+    print("trainer.batch_size : ",trainer.batch_size)
+    print("trainer.num_gpus :", trainer.num_gpus)
+    print(trainer.num_batches_per_epoch)
+
+    # epdb.set_trace()
 
     if args.disable_saving:
         trainer.save_latest_only = False  # if false it will not store/overwrite _latest but separate files each
@@ -152,21 +177,45 @@ def main():
         trainer.save_best_checkpoint = False  # whether or not to save the best checkpoint according to self.best_val_eval_criterion_MA
         trainer.save_final_checkpoint = False  # whether or not to save the final checkpoint
 
+    start_time2 = time.time() - strat_time
+    print("")
+    print("initialize start")
+    print("")
     trainer.initialize(not validation_only)
+
+    start_time3 = time.time() - start_time2
+    print("")
+    print("trainer initialize 끝남")
+    print("initialize 하는데 걸리는 시간 ",start_time3)
+    print("find_lr", find_lr)
+    print("validation only",validation_only)
+    print("")
 
     if find_lr:
         trainer.find_lr()
+        start_time4 = time.time() - start_time3
+        print("find_lr 끝남", start_time4)
+        print("find_lr", find_lr)
+        print("validation_only", validation_only)
+        print("continue_training", args.continue_training)
+        print("")
+
     else:
         if not validation_only:
             if args.continue_training:
                 trainer.load_latest_checkpoint()
+
+            # 실질적으로 학습 코드는 여기서 돌아간다.
             trainer.run_training()
+
+
         else:
             if valbest:
                 trainer.load_best_checkpoint(train=False)
             else:
                 trainer.load_final_checkpoint(train=False)
 
+        print("network eval",trainer.network)
         trainer.network.eval()
 
         # predict validation

@@ -15,6 +15,7 @@
 
 import argparse
 import torch
+import os
 
 from nnunet.inference.predict import predict_from_folder
 from nnunet.paths import default_plans_identifier, network_training_output_dir, default_cascade_trainer, default_trainer
@@ -113,16 +114,24 @@ def main():
     # parser.add_argument("--force_separate_z", required=False, default="None", type=str,
     #                     help="force_separate_z resampling. Can be None, True or False, has no effect if mode=fastest. "
     #                          "Do not touch this.")
+
+
+    # default: model_final_checkpoint'
+
+
     parser.add_argument('-chk',
                         help='checkpoint name, default: model_final_checkpoint',
                         required=False,
-                        default='model_final_checkpoint')
+                        default='model_best')
     parser.add_argument('--disable_mixed_precision', default=False, action='store_true', required=False,
                         help='Predictions are done with mixed precision by default. This improves speed and reduces '
                              'the required vram. If you want to disable mixed precision you can set this flag. Note '
                              'that yhis is not recommended (mixed precision is ~2x faster!)')
 
     args = parser.parse_args()
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+
     input_folder = args.input_folder
     output_folder = args.output_folder
     part_id = args.part_id
@@ -145,6 +154,8 @@ def main():
     cascade_trainer_class_name = args.cascade_trainer_class_name
 
     task_name = args.task_name
+
+
 
     if not task_name.startswith("Task"):
         task_id = int(task_name)
@@ -219,6 +230,8 @@ def main():
                         overwrite_existing=overwrite_existing, mode=mode, overwrite_all_in_gpu=all_in_gpu,
                         mixed_precision=not args.disable_mixed_precision,
                         step_size=step_size, checkpoint_name=args.chk)
+
+
 
 
 if __name__ == "__main__":

@@ -19,16 +19,20 @@ from batchgenerators.utilities.file_and_folder_operations import maybe_mkdir_p, 
 my_output_identifier = "nnUNet"
 default_plans_identifier = "nnUNetPlansv2.1"
 default_data_identifier = 'nnUNet'
-default_trainer = "nnUNetTrainerV2"
+default_trainer = "nnUNetTrainerV2_DP"
 default_cascade_trainer = "nnUNetTrainerV2CascadeFullRes"
+# DP_trainer ="nnUNetTrainerV2_DP"
 
 """
 PLEASE READ paths.md FOR INFORMATION TO HOW TO SET THIS UP
 """
 
-base = os.environ['nnUNet_raw_data_base'] if "nnUNet_raw_data_base" in os.environ.keys() else None
-preprocessing_output_dir = os.environ['nnUNet_preprocessed'] if "nnUNet_preprocessed" in os.environ.keys() else None
-network_training_output_dir_base = os.path.join(os.environ['RESULTS_FOLDER']) if "RESULTS_FOLDER" in os.environ.keys() else None
+# base = os.environ['nnUNet_raw_data_base'] if "nnUNet_raw_data_base" in os.environ.keys() else None
+base = '/data5/sukmin/nnUNet_raw_data_base'
+preprocessing_output_dir = '/data5/sukmin/nnunet_process_out'
+network_training_output_dir_base = '/data5/sukmin/nnunet_train_out'
+# preprocessing_output_dir = os.environ['nnUNet_preprocessed'] if "nnUNet_preprocessed" in os.environ.keys() else None
+# network_training_output_dir_base = os.path.join(os.environ['RESULTS_FOLDER']) if "RESULTS_FOLDER" in os.environ.keys() else None
 
 if base is not None:
     nnUNet_raw_data = join(base, "nnUNet_raw_data")

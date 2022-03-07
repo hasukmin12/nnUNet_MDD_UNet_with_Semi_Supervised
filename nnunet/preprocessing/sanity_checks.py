@@ -106,6 +106,7 @@ def verify_dataset_integrity(folder):
     num_modalities = len(dataset['modality'].keys())
     test_cases = dataset['test']
     expected_train_identifiers = [i['image'].split("/")[-1][:-7] for i in training_cases]
+    # expected_train_identifiers = [i['image'].split("/")[-1][:-7] for i in test_cases]
     expected_test_identifiers = [i.split("/")[-1][:-7] for i in test_cases]
 
     ## check training set

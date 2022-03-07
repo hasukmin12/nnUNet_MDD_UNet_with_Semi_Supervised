@@ -481,3 +481,4 @@ def nnunet_evaluate_folder():
                                                                        "information.")
     args = parser.parse_args()
     return evaluate_folder(args.ref, args.pred, args.l)
+

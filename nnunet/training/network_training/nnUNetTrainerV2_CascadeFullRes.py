@@ -43,6 +43,7 @@ class nnUNetTrainerV2CascadeFullRes(nnUNetTrainerV2):
                          batch_dice, stage, unpack_data, deterministic, fp16)
         self.init_args = (plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                           deterministic, previous_trainer, fp16)
+        self.max_num_epochs = 300
 
         if self.output_folder is not None:
             task = self.output_folder.split("/")[-3]

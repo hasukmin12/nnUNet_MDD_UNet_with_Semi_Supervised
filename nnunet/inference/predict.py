@@ -91,10 +91,17 @@ def preprocess_save_to_queue(preprocess_fn, q, list_of_lists, output_files, segs
 
 
 def preprocess_multithreaded(trainer, list_of_lists, output_files, num_processes=2, segs_from_prev_stage=None):
+
+    print("")
+    print("here is preprocess_multihreaded")
+    print("segs_from_prev_stage : ", segs_from_prev_stage)
+
     if segs_from_prev_stage is None:
         segs_from_prev_stage = [None] * len(list_of_lists)
 
     num_processes = min(len(list_of_lists), num_processes)
+
+    print("num_processes : ", num_processes)
 
     classes = list(range(1, trainer.num_classes))
     assert isinstance(trainer, nnUNetTrainer)
@@ -127,6 +134,7 @@ def preprocess_multithreaded(trainer, list_of_lists, output_files, num_processes
 
         q.close()
 
+# checkpoint_name="model_final_checkpoint"
 
 def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_threads_preprocessing,
                   num_threads_nifti_save, segs_from_prev_stage=None, do_tta=True, mixed_precision=True, overwrite_existing=False,
@@ -167,7 +175,7 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_t
     if not overwrite_existing:
         print("number of cases:", len(list_of_lists))
         # if save_npz=True then we should also check for missing npz files
-        not_done_idx = [i for i, j in enumerate(cleaned_output_files) if (not isfile(j)) or (save_npz and not isfile(j[:-7] + '.npz'))]
+        not_done_idx = [i for i, j in enumerate(cleaned_output_files) if (not isfile(j)) or (save_npz and not isfile(j[:-7] + '.nii.gz'))]
 
         cleaned_output_files = [cleaned_output_files[i] for i in not_done_idx]
         list_of_lists = [list_of_lists[i] for i in not_done_idx]
@@ -181,6 +189,10 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_t
 
     print("loading parameters for folds,", folds)
     trainer, params = load_model_and_checkpoint_files(model, folds, mixed_precision=mixed_precision, checkpoint_name=checkpoint_name)
+
+    print("trainer : ", trainer)
+    # print("params : ", params)
+
 
     if segmentation_export_kwargs is None:
         if 'segmentation_export_params' in trainer.plans.keys():
@@ -199,15 +211,24 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_t
     print("starting preprocessing generator")
     preprocessing = preprocess_multithreaded(trainer, list_of_lists, cleaned_output_files, num_threads_preprocessing,
                                              segs_from_prev_stage)
+
+
+    # print("preprocessing : ",preprocessing)
+    print("")
+    print("")
+
     print("starting prediction...")
     all_output_files = []
     for preprocessed in preprocessing:
+        print("preprocessed : ", preprocessed)
+
         output_filename, (d, dct) = preprocessed
         all_output_files.append(all_output_files)
         if isinstance(d, str):
             data = np.load(d)
             os.remove(d)
             d = data
+            print("d : ", d)
 
         print("predicting", output_filename)
         softmax = []
@@ -226,8 +247,11 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_t
             transpose_backward = trainer.plans.get('transpose_backward')
             softmax_mean = softmax_mean.transpose([0] + [i + 1 for i in transpose_backward])
 
+
+        # npz_file : 이름이 들어감
+
         if save_npz:
-            npz_file = output_filename[:-7] + ".npz"
+            npz_file = output_filename[:-7] + "_att"# + ".nii.gz"
         else:
             npz_file = None
 
@@ -283,6 +307,8 @@ def predict_cases(model, list_of_lists, output_filenames, folds, save_npz, num_t
     pool.close()
     pool.join()
 
+
+# checkpoint_name="model_final_checkpoint"
 
 def predict_cases_fast(model, list_of_lists, output_filenames, folds, num_threads_preprocessing,
                        num_threads_nifti_save, segs_from_prev_stage=None, do_tta=True, mixed_precision=True,
@@ -421,6 +447,7 @@ def predict_cases_fast(model, list_of_lists, output_filenames, folds, num_thread
     pool.close()
     pool.join()
 
+# checkpoint_name="model_final_checkpoint"
 
 def predict_cases_fastest(model, list_of_lists, output_filenames, folds, num_threads_preprocessing,
                           num_threads_nifti_save, segs_from_prev_stage=None, do_tta=True, mixed_precision=True,
@@ -574,12 +601,14 @@ def check_input_folder_and_return_caseIDs(input_folder, expected_num_modalities)
     return maybe_case_ids
 
 
+# checkpoint_name: str = "model_final_checkpoint"
+
 def predict_from_folder(model: str, input_folder: str, output_folder: str, folds: Union[Tuple[int], List[int]],
                         save_npz: bool, num_threads_preprocessing: int, num_threads_nifti_save: int,
                         lowres_segmentations: Union[str, None],
                         part_id: int, num_parts: int, tta: bool, mixed_precision: bool = True,
                         overwrite_existing: bool = True, mode: str = 'normal', overwrite_all_in_gpu: bool = None,
-                        step_size: float = 0.5, checkpoint_name: str = "model_final_checkpoint",
+                        step_size: float = 0.5, checkpoint_name: str = "model_best",
                         segmentation_export_kwargs: dict = None):
     """
         here we use the standard naming scheme to generate list_of_lists and output_files needed by predict_cases
@@ -613,6 +642,18 @@ def predict_from_folder(model: str, input_folder: str, output_folder: str, folds
     list_of_lists = [[join(input_folder, i) for i in all_files if i[:len(j)].startswith(j) and
                       len(i) == (len(j) + 12)] for j in case_ids]
 
+
+    print("")
+    print("here is check point")
+    print("case_ids : ", case_ids)
+    print("output_files :", output_files)
+    print("all_files : ", all_files)
+    print("list_of_lists : ", list_of_lists)
+    print("overwrite_all_in_gpu : ", overwrite_all_in_gpu)
+    print("")
+
+
+
     if lowres_segmentations is not None:
         assert isdir(lowres_segmentations), "if lowres_segmentations is not None then it must point to a directory"
         lowres_segmentations = [join(lowres_segmentations, i + ".nii.gz") for i in case_ids]
@@ -624,6 +665,8 @@ def predict_from_folder(model: str, input_folder: str, output_folder: str, folds
 
     if mode == "normal":
         if overwrite_all_in_gpu is None:
+            # 항상 None일 예정
+
             all_in_gpu = False
         else:
             all_in_gpu = overwrite_all_in_gpu
@@ -633,6 +676,28 @@ def predict_from_folder(model: str, input_folder: str, output_folder: str, folds
                              mixed_precision=mixed_precision, overwrite_existing=overwrite_existing, all_in_gpu=all_in_gpu,
                              step_size=step_size, checkpoint_name=checkpoint_name,
                              segmentation_export_kwargs=segmentation_export_kwargs)
+
+
+    # # 우리는 mode = "normal"로만 갈 것이다.
+    # # mode = "normal_heatmap"을 하나 만들어서 heatmap을 뽑아내고 싶으면 해당 모드로 가자
+    #
+    # if mode == "normal_heatmap":
+    #     if overwrite_all_in_gpu is None:
+    #         all_in_gpu = False
+    #     else:
+    #         all_in_gpu = overwrite_all_in_gpu
+    #
+    #     return predict_cases(model, list_of_lists[part_id::num_parts], output_files[part_id::num_parts], folds,
+    #                          save_npz, num_threads_preprocessing, num_threads_nifti_save, lowres_segmentations, tta,
+    #                          mixed_precision=mixed_precision, overwrite_existing=overwrite_existing, all_in_gpu=all_in_gpu,
+    #                          step_size=step_size, checkpoint_name=checkpoint_name,
+    #                          segmentation_export_kwargs=segmentation_export_kwargs)
+    #
+    #
+    #
+    # # 아래는 건들지 말자
+
+
     elif mode == "fast":
         if overwrite_all_in_gpu is None:
             all_in_gpu = True

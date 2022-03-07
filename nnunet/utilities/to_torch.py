@@ -29,3 +29,24 @@ def to_cuda(data, non_blocking=True, gpu_id=0):
     else:
         data = data.cuda(gpu_id, non_blocking=non_blocking)
     return data
+
+def to_cuda_1(data, non_blocking=True, gpu_id=1):
+    if isinstance(data, list):
+        data = [i.cuda(gpu_id, non_blocking=non_blocking) for i in data]
+    else:
+        data = data.cuda(gpu_id, non_blocking=non_blocking)
+    return data
+
+def to_cuda_2(data, non_blocking=True, gpu_id=2):
+    if isinstance(data, list):
+        data = [i.cuda(gpu_id, non_blocking=non_blocking) for i in data]
+    else:
+        data = data.cuda(gpu_id, non_blocking=non_blocking)
+    return data
+
+def to_cuda_3(data, non_blocking=True, gpu_id=3):
+    if isinstance(data, list):
+        data = [i.cuda(gpu_id, non_blocking=non_blocking) for i in data]
+    else:
+        data = data.cuda(gpu_id, non_blocking=non_blocking)
+    return data

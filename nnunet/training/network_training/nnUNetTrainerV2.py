@@ -19,6 +19,8 @@ from typing import Tuple
 import numpy as np
 import torch
 from nnunet.training.data_augmentation.data_augmentation_moreDA import get_moreDA_augmentation
+# from nnunet.training.data_augmentation.data_augmentation_insaneDA2 import get_insaneDA_augmentation2
+
 from nnunet.training.loss_functions.deep_supervision import MultipleOutputLoss2
 from nnunet.utilities.to_torch import maybe_to_torch, to_cuda
 from nnunet.network_architecture.generic_UNet import Generic_UNet
@@ -26,6 +28,8 @@ from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 from nnunet.training.data_augmentation.default_data_augmentation import default_2D_augmentation_params, \
     get_patch_size, default_3D_augmentation_params
+
+
 from nnunet.training.dataloading.dataset_loading import unpack_dataset
 from nnunet.training.network_training.nnUNetTrainer import nnUNetTrainer
 from nnunet.utilities.nd_softmax import softmax_helper
@@ -45,7 +49,7 @@ class nnUNetTrainerV2(nnUNetTrainer):
                  unpack_data=True, deterministic=True, fp16=False):
         super().__init__(plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                          deterministic, fp16)
-        self.max_num_epochs = 1000
+        self.max_num_epochs = 300
         self.initial_lr = 1e-2
         self.deep_supervision_scales = None
         self.ds_loss_weights = None
@@ -220,6 +224,7 @@ class nnUNetTrainerV2(nnUNetTrainer):
         self.network.do_ds = ds
         return ret
 
+
     def run_iteration(self, data_generator, do_backprop=True, run_online_evaluation=False):
         """
         gradient clipping improves training stability
@@ -282,6 +287,10 @@ class nnUNetTrainerV2(nnUNetTrainer):
         use a random 80:20 data split.
         :return:
         """
+        # is self.fold =='semi-supervised':
+
+
+
         if self.fold == "all":
             # if fold==all then we use all images for training and validation
             tr_keys = val_keys = list(self.dataset.keys())
@@ -391,6 +400,7 @@ class nnUNetTrainerV2(nnUNetTrainer):
         self.data_aug_params["num_cached_per_thread"] = 2
 
     def maybe_update_lr(self, epoch=None):
+    # def maybe_update_lr(self, epoch=300):
         """
         if epoch is not None we overwrite epoch. Else we use epoch = self.epoch + 1
 
@@ -437,6 +447,9 @@ class nnUNetTrainerV2(nnUNetTrainer):
         """
         self.maybe_update_lr(self.epoch)  # if we dont overwrite epoch then self.epoch+1 is used which is not what we
         # want at the start of the training
+
+
+
         ds = self.network.do_ds
         self.network.do_ds = True
         ret = super().run_training()

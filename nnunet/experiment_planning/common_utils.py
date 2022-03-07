@@ -151,6 +151,12 @@ def get_pool_and_conv_props(spacing, patch_size, min_feature_map_size, max_numpo
 
     # we need to add one more conv_kernel_size for the bottleneck. We always use 3x3(x3) conv here
     conv_kernel_sizes.append([3]*dim)
+
+
+    # Dense connection을 위해 이 부분 수정
+    # pool_op_kernel_sizes = [[2,2,2],[2,2,2],[2,2,2],[2,2,2]]
+    # conv_kernel_sizes = [[3, 3, 3], [3, 3, 3], [3, 3, 3], [3, 3, 3]]
+
     return num_pool_per_axis, pool_op_kernel_sizes, conv_kernel_sizes, patch_size, must_be_divisible_by
 
 

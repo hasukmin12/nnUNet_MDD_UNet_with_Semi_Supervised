@@ -106,6 +106,8 @@ def load_best_model_for_inference(folder):
     return restore_model(pkl_file, checkpoint, False)
 
 
+
+# checkpoint_name="model_best"
 def load_model_and_checkpoint_files(folder, folds=None, mixed_precision=None, checkpoint_name="model_best"):
     """
     used for if you need to ensemble the five models of a cross-validation. This will restore the model from the

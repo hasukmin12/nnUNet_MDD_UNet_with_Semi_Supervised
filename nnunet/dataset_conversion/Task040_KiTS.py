@@ -198,8 +198,8 @@ def reset_trainerName_these(experiments=('nnUNetTrainerNewCandidate23_FabiansPre
 
 
 if __name__ == "__main__":
-    base = "/media/fabian/My Book/datasets/KiTS2019_Challenge/kits19/data"
-    out = "/media/fabian/My Book/MedicalDecathlon/nnUNet_raw_splitted/Task040_KiTS"
+    base = "/data/sukmin/kits19/data"
+    out = "/data/sukmin/nnunet_kits19"
     cases = subdirs(base, join=False)
 
     maybe_mkdir_p(out)

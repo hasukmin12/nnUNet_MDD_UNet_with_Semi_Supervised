@@ -64,6 +64,12 @@ class SegmentationNetwork(NeuralNetwork):
         # to apply in inference. For the most part this will be softmax
         self.inference_apply_nonlin = lambda x: x  # softmax_helper
 
+        self.inference_apply_nonlin_1 = lambda  x : x[0]  # softmax_helper for inference 3 brnach
+        self.inference_apply_nonlin_2 = lambda x: x[1]
+        self.inference_apply_nonlin_3 = lambda x: x[2]
+
+
+
         # This is for saving a gaussian importance map for inference. It weights voxels higher that are closer to the
         # center. Prediction at the borders are often less accurate and are thus downweighted. Creating these Gaussians
         # can be expensive, so it makes sense to save and reuse them.
@@ -516,6 +522,7 @@ class SegmentationNetwork(NeuralNetwork):
         else:
             mirror_idx = 1
             num_results = 1
+
 
         for m in range(mirror_idx):
             if m == 0:

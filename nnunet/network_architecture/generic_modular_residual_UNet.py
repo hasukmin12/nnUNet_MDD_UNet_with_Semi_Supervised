@@ -188,13 +188,19 @@ class ResidualUNetDecoder(nn.Module):
             self.stages.append(ResidualLayer(2 * features_skip, features_skip, previous_stage_conv_op_kernel_size[s],
                                              self.props, num_blocks_per_stage[i], None, block))
 
-            if deep_supervision and s != 0:
+            # if deep_supervision and s != 0:
+            if s != 0:
                 seg_layer = self.props['conv_op'](features_skip, num_classes, 1, 1, 0, 1, 1, False)
                 if upscale_logits:
                     upsample = Upsample(scale_factor=cum_upsample[s], mode=upsample_mode)
                     self.deep_supervision_outputs.append(nn.Sequential(seg_layer, upsample))
+                    print("upsample : ", upsample)
+
                 else:
                     self.deep_supervision_outputs.append(seg_layer)
+                    print("seg_layer : ", seg_layer)
+
+
 
         self.segmentation_output = self.props['conv_op'](features_skip, num_classes, 1, 1, 0, 1, 1, False)
 
@@ -260,46 +266,46 @@ class ResidualUNetDecoder(nn.Module):
         return tmp * batch_size
 
 
-class ResidualUNet(SegmentationNetwork):
-    use_this_for_batch_size_computation_2D = 858931200.0  # 1167982592.0
-    use_this_for_batch_size_computation_3D = 727842816.0  # 1152286720.0
-    default_base_num_features = 24
-    default_conv_per_stage = (2, 2, 2, 2, 2, 2, 2, 2)
-
-    def __init__(self, input_channels, base_num_features, num_blocks_per_stage_encoder, feat_map_mul_on_downscale,
-                 pool_op_kernel_sizes, conv_kernel_sizes, props, num_classes, num_blocks_per_stage_decoder,
-                 deep_supervision=False, upscale_logits=False, max_features=512, initializer=None,
-                 block=BasicResidualBlock):
-        super(ResidualUNet, self).__init__()
-        self.conv_op = props['conv_op']
-        self.num_classes = num_classes
-
-        self.encoder = ResidualUNetEncoder(input_channels, base_num_features, num_blocks_per_stage_encoder,
-                                           feat_map_mul_on_downscale, pool_op_kernel_sizes, conv_kernel_sizes,
-                                           props, default_return_skips=True, max_num_features=max_features, block=block)
-        self.decoder = ResidualUNetDecoder(self.encoder, num_classes, num_blocks_per_stage_decoder, props,
-                                           deep_supervision, upscale_logits, block=block)
-        if initializer is not None:
-            self.apply(initializer)
-
-    def forward(self, x):
-        skips = self.encoder(x)
-        return self.decoder(skips)
-
-    @staticmethod
-    def compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
-                                        num_modalities, num_classes, pool_op_kernel_sizes, num_conv_per_stage_encoder,
-                                        num_conv_per_stage_decoder, feat_map_mul_on_downscale, batch_size):
-        enc = ResidualUNetEncoder.compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
-                                                                  num_modalities, pool_op_kernel_sizes,
-                                                                  num_conv_per_stage_encoder,
-                                                                  feat_map_mul_on_downscale, batch_size)
-        dec = ResidualUNetDecoder.compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
-                                                                  num_classes, pool_op_kernel_sizes,
-                                                                  num_conv_per_stage_decoder,
-                                                                  feat_map_mul_on_downscale, batch_size)
-
-        return enc + dec
+# class ResidualUNet(SegmentationNetwork):
+#     use_this_for_batch_size_computation_2D = 858931200.0  # 1167982592.0
+#     use_this_for_batch_size_computation_3D = 727842816.0  # 1152286720.0
+#     default_base_num_features = 24
+#     default_conv_per_stage = (2, 2, 2, 2, 2, 2, 2, 2)
+#
+#     def __init__(self, input_channels, base_num_features, num_blocks_per_stage_encoder, feat_map_mul_on_downscale,
+#                  pool_op_kernel_sizes, conv_kernel_sizes, props, num_classes, num_blocks_per_stage_decoder,
+#                  deep_supervision=False, upscale_logits=False, max_features=512, initializer=None,
+#                  block=BasicResidualBlock):
+#         super(ResidualUNet, self).__init__()
+#         self.conv_op = props['conv_op']
+#         self.num_classes = num_classes
+#
+#         self.encoder = ResidualUNetEncoder(input_channels, base_num_features, num_blocks_per_stage_encoder,
+#                                            feat_map_mul_on_downscale, pool_op_kernel_sizes, conv_kernel_sizes,
+#                                            props, default_return_skips=True, max_num_features=max_features, block=block)
+#         self.decoder = ResidualUNetDecoder(self.encoder, num_classes, num_blocks_per_stage_decoder, props,
+#                                            deep_supervision, upscale_logits, block=block)
+#         if initializer is not None:
+#             self.apply(initializer)
+#
+#     def forward(self, x):
+#         skips = self.encoder(x)
+#         return self.decoder(skips)
+#
+#     @staticmethod
+#     def compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
+#                                         num_modalities, num_classes, pool_op_kernel_sizes, num_conv_per_stage_encoder,
+#                                         num_conv_per_stage_decoder, feat_map_mul_on_downscale, batch_size):
+#         enc = ResidualUNetEncoder.compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
+#                                                                   num_modalities, pool_op_kernel_sizes,
+#                                                                   num_conv_per_stage_encoder,
+#                                                                   feat_map_mul_on_downscale, batch_size)
+#         dec = ResidualUNetDecoder.compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
+#                                                                   num_classes, pool_op_kernel_sizes,
+#                                                                   num_conv_per_stage_decoder,
+#                                                                   feat_map_mul_on_downscale, batch_size)
+#
+#         return enc + dec
 
 
 class FabiansUNet(SegmentationNetwork):
@@ -310,7 +316,7 @@ class FabiansUNet(SegmentationNetwork):
     use_this_for_3D_configuration = 1230348801.0
     default_blocks_per_stage_encoder = (1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 4)
     default_blocks_per_stage_decoder = (1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-    default_min_batch_size = 2 # this is what works with the numbers above
+    default_min_batch_size = 4 # this is what works with the numbers above
 
     def __init__(self, input_channels, base_num_features, num_blocks_per_stage_encoder, feat_map_mul_on_downscale,
                  pool_op_kernel_sizes, conv_kernel_sizes, props, num_classes, num_blocks_per_stage_decoder,
@@ -350,6 +356,89 @@ class FabiansUNet(SegmentationNetwork):
                                                                    feat_map_mul_on_downscale, batch_size)
 
         return enc + dec
+
+
+
+
+
+
+# FabianUNet을 보고 참고해서 plan_and_precess부터 싹 다 수정함
+
+class ResidualUNet(SegmentationNetwork):
+    """
+    Residual Encoder, Plain conv decoder
+    """
+    use_this_for_2D_configuration = 1244233721.0  # 1167982592.0
+    use_this_for_3D_configuration = 1230348801.0
+    default_blocks_per_stage_encoder = (1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 4)
+    default_blocks_per_stage_decoder = (1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+    default_min_batch_size = 4  # this is what works with the numbers above
+
+    def __init__(self, input_channels, base_num_features, num_blocks_per_stage_encoder, feat_map_mul_on_downscale,
+                 pool_op_kernel_sizes, conv_kernel_sizes, props, num_classes, num_blocks_per_stage_decoder,
+                 deep_supervision=False, upscale_logits=False, max_features=512, initializer=None,
+                 block=BasicResidualBlock,
+                 props_decoder=None):
+        super().__init__()
+        self.conv_op = props['conv_op']
+        self.num_classes = num_classes
+
+        self.encoder = ResidualUNetEncoder(input_channels, base_num_features, num_blocks_per_stage_encoder,
+                                           feat_map_mul_on_downscale, pool_op_kernel_sizes, conv_kernel_sizes,
+                                           props, default_return_skips=True, max_num_features=max_features,
+                                           block=block)
+        props['dropout_op_kwargs']['p'] = 0
+        if props_decoder is None:
+            props_decoder = props
+        self.decoder = ResidualUNetDecoder(self.encoder, num_classes, num_blocks_per_stage_decoder, props_decoder,
+                                            deep_supervision, upscale_logits)
+        if initializer is not None:
+            self.apply(initializer)
+
+    def forward(self, x):
+        skips = self.encoder(x)
+        # print(skips[0].shape)
+        # print(skips[1].shape)
+        # print(skips[2].shape)
+        # print(skips[3].shape)
+
+
+        return self.decoder(skips)
+
+    @staticmethod
+    def compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
+                                        num_modalities, num_classes, pool_op_kernel_sizes,
+                                        num_conv_per_stage_encoder,
+                                        num_conv_per_stage_decoder, feat_map_mul_on_downscale, batch_size):
+        enc = ResidualUNetEncoder.compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
+                                                                  num_modalities, pool_op_kernel_sizes,
+                                                                  num_conv_per_stage_encoder,
+                                                                  feat_map_mul_on_downscale, batch_size)
+        dec = ResidualUNetDecoder.compute_approx_vram_consumption(patch_size, base_num_features, max_num_features,
+                                                                   num_classes, pool_op_kernel_sizes,
+                                                                   num_conv_per_stage_decoder,
+                                                                   feat_map_mul_on_downscale, batch_size)
+
+        return enc + dec
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def find_3d_configuration():

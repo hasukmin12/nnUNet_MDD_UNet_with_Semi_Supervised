@@ -82,6 +82,8 @@ def main():
 
     args = parser.parse_args()
 
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+
     task = args.task
     fold = args.fold
     network = args.network
@@ -107,7 +109,8 @@ def main():
 
     if not task.startswith("Task"):
         task_id = int(task)
-        task = convert_id_to_task_name(task_id)
+        # task = convert_id_to_task_name(task_id)
+        task = 'KiTS'
 
     if fold == 'all':
         pass

@@ -90,6 +90,8 @@ def main():
 
     args = parser.parse_args()
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+
     task = args.task
     fold = args.fold
     network = args.network

@@ -21,6 +21,7 @@ import numpy as np
 from nnunet.network_architecture.initialization import InitWeights_He
 from nnunet.network_architecture.neural_network import SegmentationNetwork
 import torch.nn.functional
+import pdb
 
 
 class ConvDropoutNormNonlin(nn.Module):
@@ -270,6 +271,9 @@ class Generic_UNet(SegmentationNetwork):
         output_features = base_num_features
         input_features = input_channels
 
+        # pdb.set_trace()
+
+
         for d in range(num_pool):
             # determine the first stride
             if d != 0 and self.convolutional_pooling:
@@ -298,6 +302,17 @@ class Generic_UNet(SegmentationNetwork):
             first_stride = pool_op_kernel_sizes[-1]
         else:
             first_stride = None
+
+
+        # pdb.set_trace()
+
+
+# 여기까지 DownSampling
+# 이제부터 Upsampling
+
+# if 라벨의 max()값이 1이라면 - 여기에서 떨어지는 loss랑
+# else(bladder)쪽의 loss랑 다르게 구별해서 학습하자
+
 
         # the output of the last conv must match the number of features from the skip connection if we are not using
         # convolutional upsampling. If we use convolutional upsampling then the reduction in feature maps will be
@@ -371,6 +386,7 @@ class Generic_UNet(SegmentationNetwork):
             self.dropout_op_kwargs['p'] = old_dropout_p
 
         # register all modules properly
+        # nn.ModuleList는
         self.conv_blocks_localization = nn.ModuleList(self.conv_blocks_localization)
         self.conv_blocks_context = nn.ModuleList(self.conv_blocks_context)
         self.td = nn.ModuleList(self.td)
@@ -384,28 +400,52 @@ class Generic_UNet(SegmentationNetwork):
             self.apply(self.weightInitializer)
             # self.apply(print_module_training_status)
 
+
+
+
     def forward(self, x):
         skips = []
         seg_outputs = []
+
         for d in range(len(self.conv_blocks_context) - 1):
             x = self.conv_blocks_context[d](x)
             skips.append(x)
             if not self.convolutional_pooling:
                 x = self.td[d](x)
 
+        # print("before conv_block : ", print(x.shape))
         x = self.conv_blocks_context[-1](x)
+        # print("after conv_block : ", print(x.shape))
+
+
+    # 여기서부터 branch 나뉘어져야 한다.
+
+        # 여기서 tu는 upsampling layer 개수를 뜻한다.
+        # 고로 마지막 u = 3
+        # 각각의 upsampling 결과마다 concat해서 seg_outputs에 append한다.
+        # 이 말뜻은, 결국 마지막 Layer의 결과물인 seg_outputs[3]이 최종 output이 되겠다.
 
         for u in range(len(self.tu)):
+            # print("x before : ", x.shape)
             x = self.tu[u](x)
+            # print("x after : ", x.shape)
             x = torch.cat((x, skips[-(u + 1)]), dim=1)
             x = self.conv_blocks_localization[u](x)
             seg_outputs.append(self.final_nonlin(self.seg_outputs[u](x)))
+            # print("seg_outputs[u].shape : ",seg_outputs[u].shape)
+            # print("x.shape : ",x.shape)
+
 
         if self._deep_supervision and self.do_ds:
             return tuple([seg_outputs[-1]] + [i(j) for i, j in
                                               zip(list(self.upscale_logits_ops)[::-1], seg_outputs[:-1][::-1])])
+
+        # 여기론 갈 일 없어보인다.
         else:
             return seg_outputs[-1]
+
+
+
 
     @staticmethod
     def compute_approx_vram_consumption(patch_size, num_pool_per_axis, base_num_features, max_num_features,

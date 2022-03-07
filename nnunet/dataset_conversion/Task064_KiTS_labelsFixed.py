@@ -23,14 +23,20 @@ if __name__ == "__main__":
     This is the KiTS dataset after Nick fixed all the labels that had errors. Downloaded on Jan 6th 2020    
     """
 
-    base = "/media/fabian/My Book/datasets/KiTS_clean/kits19/data"
+    base = "/data/sukmin/kits19/data"
 
     task_id = 64
     task_name = "KiTS_labelsFixed"
 
     foldername = "Task%03.0d_%s" % (task_id, task_name)
 
+    nnUNet_raw_data = '/data/sukmin'
+
     out_base = join(nnUNet_raw_data, foldername)
+    # out_base = join(base, foldername)
+
+
+
     imagestr = join(out_base, "imagesTr")
     imagests = join(out_base, "imagesTs")
     labelstr = join(out_base, "labelsTr")

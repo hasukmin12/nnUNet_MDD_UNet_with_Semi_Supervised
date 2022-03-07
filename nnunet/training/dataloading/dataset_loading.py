@@ -307,13 +307,18 @@ class DataLoader3D(SlimDataLoaderBase):
 
                 if len(foreground_classes) == 0:
                     # this only happens if some image does not contain foreground voxels at all
+                    # selected_class = np.random.choice(foreground_classes)
+                    #
+                    # voxels_of_that_class = properties['class_locations'][selected_class]
+
                     selected_class = None
                     voxels_of_that_class = None
-                    print('case does not contain any foreground classes', i)
+                    # print('case does not contain any foreground classes', i)
                 else:
                     selected_class = np.random.choice(foreground_classes)
 
                     voxels_of_that_class = properties['class_locations'][selected_class]
+                    # print()
 
                 if voxels_of_that_class is not None:
                     selected_voxel = voxels_of_that_class[np.random.choice(len(voxels_of_that_class))]

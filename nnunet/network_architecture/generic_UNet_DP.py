@@ -58,20 +58,67 @@ class Generic_UNet_DP(Generic_UNet):
                                               max_num_features)
         self.ce_loss = RobustCrossEntropyLoss()
 
+
+# 여기서 x는 input(CT 영상), y는 label된 GT(Label GT)이다.
+
+# 각각의 res[i], y[i] 값은 sampling하는 Layer 각각의 output을 뜻한다.
+# 각각의 i 값이 배치라고 생각하면 된다.
+# 여기서 각각의 res 및 y의 텐서 크기는 (40*40)이다.
+# 본래의 영상 및 라벨의 사이즈를 줄이고 분할해서 (40*40)로 만든거라고 이해하면 된다.
+
     def forward(self, x, y=None, return_hard_tp_fp_fn=False):
         res = super(Generic_UNet_DP, self).forward(x)  # regular Generic_UNet forward pass
 
+
+        # print("res[0].shape: ", res[0].shape)
+        # print("res[1].shape : ", res[1].shape)
+        # print("res[2].shape : ", res[2].shape)
+        # print("res[3].shape : ", res[3].shape)
+        #
+        # print("res[0].max()", res[0].max())
+        # print("res[1].max()", res[1].max())
+        #
+        #
+        #
+        # print("y[0].shape: ",y[0].shape)
+        # print("y[1].shape : ",y[1].shape)
+        # print("y[2].shape : ", y[2].shape)
+        # print("y[3].shape : ", y[3].shape)
+        #
+        # print("y[0].max()", y[0].max())
+        # print("y[1].max()", y[1].max())
+
+
+
         if y is None:
             return res
+
+        # 여기로 들어간다고 보면 된다.
         else:
             # compute ce loss
+            # print("compute ce loss")
+
+            # self._deep_supervision = True
             if self._deep_supervision and self.do_ds:
+                # print("deep_supervision is True")
                 ce_losses = [self.ce_loss(res[0], y[0]).unsqueeze(0)]
+                # ce_losses_0 = [self.ce_loss(res[0][:][0], y[0]).unsqueeze(0)]
+                # ce_losses_1 = [self.ce_loss(res[0][:][1], y[0]).unsqueeze(0)]
+
+                # print("ce_losses : ", ce_losses.shape)
+
+
+
+
+                # tp : True Positive
+                # fp : False Positive
+                # fn : False Negative
                 tps = []
                 fps = []
                 fns = []
 
                 res_softmax = softmax_helper(res[0])
+               # print("res_softmax.shape : ", res_softmax.shape)
                 tp, fp, fn, _ = get_tp_fp_fn_tn(res_softmax, y[0])
                 tps.append(tp)
                 fps.append(fp)
@@ -84,7 +131,10 @@ class Generic_UNet_DP(Generic_UNet):
                     fps.append(fp)
                     fns.append(fn)
                 ret = ce_losses, tps, fps, fns
+
+            # 여긴 안쓰인다고 보면된다.
             else:
+                # print("deep_supervision is False")
                 ce_loss = self.ce_loss(res, y).unsqueeze(0)
 
                 # tp fp and fn need the output to be softmax
@@ -94,7 +144,11 @@ class Generic_UNet_DP(Generic_UNet):
 
                 ret = ce_loss, tp, fp, fn
 
+
+            # validation 시 여기로 들어간다.
             if return_hard_tp_fp_fn:
+
+                # print("return_hard_tp_fp_fn is True")
                 if self._deep_supervision and self.do_ds:
                     output = res[0]
                     target = y[0]

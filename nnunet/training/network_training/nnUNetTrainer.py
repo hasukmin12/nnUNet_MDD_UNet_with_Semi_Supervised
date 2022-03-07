@@ -41,6 +41,8 @@ from nnunet.utilities.tensor_utilities import sum_tensor
 from torch import nn
 from torch.optim import lr_scheduler
 
+# from nnunet.network_architecture.Attention_check_network import Att_DenseUNet_check_attention
+
 
 matplotlib.use("agg")
 
@@ -73,6 +75,7 @@ class nnUNetTrainer(NetworkTrainer):
         in your init accordingly. Otherwise checkpoints won't load properly!
         """
         super(nnUNetTrainer, self).__init__(deterministic, fp16)
+        self.max_num_epochs = 1
         self.unpack_data = unpack_data
         self.init_args = (plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                           deterministic, fp16)
@@ -111,6 +114,22 @@ class nnUNetTrainer(NetworkTrainer):
         self.online_eval_tp = []
         self.online_eval_fp = []
         self.online_eval_fn = []
+
+        # self.online_eval_foreground_dc_2 = []
+        # self.online_eval_tp_2 = []
+        # self.online_eval_fp_2 = []
+        # self.online_eval_fn_2 = []
+        #
+        # self.online_eval_foreground_dc_3 = []
+        # self.online_eval_tp_3 = []
+        # self.online_eval_fp_3 = []
+        # self.online_eval_fn_3 = []
+
+
+
+
+
+
 
         self.classes = self.do_dummy_2D_aug = self.use_mask_for_norm = self.only_keep_largest_connected_component = \
             self.min_region_size_per_class = self.min_size_per_class = None
@@ -298,6 +317,9 @@ class nnUNetTrainer(NetworkTrainer):
 
     def run_training(self):
         dct = OrderedDict()
+
+        print("dct :", dct)
+
         for k in self.__dir__():
             if not k.startswith("__"):
                 if not callable(getattr(self, k)):
@@ -522,6 +544,64 @@ class nnUNetTrainer(NetworkTrainer):
         self.network.train(current_mode)
         return ret
 
+
+
+
+
+    def predict_preprocessed_data_return_attention(self, data: np.ndarray, do_mirroring: bool = True,
+                                                         mirror_axes: Tuple[int] = None,
+                                                         use_sliding_window: bool = True, step_size: float = 0.5,
+                                                         use_gaussian: bool = True, pad_border_mode: str = 'constant',
+                                                         pad_kwargs: dict = None, all_in_gpu: bool = False,
+                                                         verbose: bool = True, mixed_precision: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        :param data:
+        :param do_mirroring:
+        :param mirror_axes:
+        :param use_sliding_window:
+        :param step_size:
+        :param use_gaussian:
+        :param pad_border_mode:
+        :param pad_kwargs:
+        :param all_in_gpu:
+        :param verbose:
+        :return:
+        """
+        if pad_border_mode == 'constant' and pad_kwargs is None:
+            pad_kwargs = {'constant_values': 0}
+
+        if do_mirroring and mirror_axes is None:
+            mirror_axes = self.data_aug_params['mirror_axes']
+
+        if do_mirroring:
+            assert self.data_aug_params["do_mirror"], "Cannot do mirroring as test time augmentation when training " \
+                                                      "was done without mirroring"
+
+        valid = list((SegmentationNetwork, nn.DataParallel))
+        assert isinstance(self.network, tuple(valid))
+
+        # self.network = Att_DenseUNet_check_attention
+
+        current_mode = self.network.training
+
+        self.network.eval()
+        ret = self.network.predict_3D(data, do_mirroring=do_mirroring, mirror_axes=mirror_axes,
+                                      use_sliding_window=use_sliding_window, step_size=step_size,
+                                      patch_size=self.patch_size, regions_class_order=self.regions_class_order,
+                                      use_gaussian=use_gaussian, pad_border_mode=pad_border_mode,
+                                      pad_kwargs=pad_kwargs, all_in_gpu=all_in_gpu, verbose=verbose,
+                                      mixed_precision=mixed_precision)
+        self.network.train(current_mode)
+        return ret
+
+
+
+
+
+
+
+
+
     def validate(self, do_mirroring: bool = True, use_sliding_window: bool = True, step_size: float = 0.5,
                  save_softmax: bool = True, use_gaussian: bool = True, overwrite: bool = True,
                  validation_folder_name: str = 'validation_raw', debug: bool = False, all_in_gpu: bool = False,
@@ -704,23 +784,102 @@ class nnUNetTrainer(NetworkTrainer):
             self.online_eval_fn.append(list(fn_hard))
 
     def finish_online_evaluation(self):
+
+        # print("before self.online_eval_tp : ", self.online_eval_tp)
         self.online_eval_tp = np.sum(self.online_eval_tp, 0)
         self.online_eval_fp = np.sum(self.online_eval_fp, 0)
         self.online_eval_fn = np.sum(self.online_eval_fn, 0)
 
+        # print("after self.online_eval_tp : ", self.online_eval_tp)
+        # print("self.online_eval_fp : ", self.online_eval_fp)
+        # print("self.online_eval_fn : ", self.online_eval_fn)
+
+
+        # 여기서 float를 0으로 나누려해서 아래와 같은 오류가 발생한다.
+        # RuntimeWarning: invalid value encountered in double_scalars
+        # (2 * i + j + k)가 0이 떠서 그런듯.. 그렇다면 학습이 계속 진행되다보면 0이 아닌순간이 오고 그렇다면 값이 나오지 않을까..?
+        # 에포크 1부터 해당 문제 바로 해결됌 개꿀 ㅋㅎ
+
         global_dc_per_class = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
                                            zip(self.online_eval_tp, self.online_eval_fp, self.online_eval_fn)]
                                if not np.isnan(i)]
+
+        # print("global_dc_per_class : ",  global_dc_per_class)
+
+
         self.all_val_eval_metrics.append(np.mean(global_dc_per_class))
 
-        self.print_to_log_file("Average global foreground Dice:", str(global_dc_per_class))
-        self.print_to_log_file("(interpret this as an estimate for the Dice of the different classes. This is not "
-                               "exact.)")
+        self.print_to_log_file("Average global foreground Dice (for Ureter):", str(global_dc_per_class))
+        # self.print_to_log_file("(interpret this as an estimate for the Dice of the different classes. This is not "
+        #                        "exact.)")
 
         self.online_eval_foreground_dc = []
         self.online_eval_tp = []
         self.online_eval_fp = []
         self.online_eval_fn = []
+
+
+
+        ## 여기서부턴 3 branch 달때 사용한 것들
+#
+#         # print("before self.online_eval_tp_2 : ", self.online_eval_tp_2)
+#         self.online_eval_tp_2 = np.sum(self.online_eval_tp_2, 0)
+#         self.online_eval_fp_2 = np.sum(self.online_eval_fp_2, 0)
+#         self.online_eval_fn_2 = np.sum(self.online_eval_fn_2, 0)
+#
+#         # print("after self.online_eval_tp_2 : ", self.online_eval_tp_2)
+#         # print("self.online_eval_fp_2 : ", self.online_eval_fp_2)
+#         # print("self.online_eval_fn_2 : ", self.online_eval_fn_2)
+#
+#         global_dc_per_class_2 = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
+#                                            zip(self.online_eval_tp_2, self.online_eval_fp_2, self.online_eval_fn_2)]
+#                                if not np.isnan(i)]
+#
+#         # print(" global_dc_per_class_2 : ", global_dc_per_class_2)
+#
+#         self.all_val_eval_metrics_2.append(np.mean(global_dc_per_class_2))
+#
+#         self.print_to_log_file("Average global foreground Dice (for Bladder):", str(global_dc_per_class_2))
+#         # self.print_to_log_file("(interpret this as an estimate for the Dice of the different classes. This is not "
+#         #                        "exact.)")
+#
+#         self.online_eval_foreground_dc_2 = []
+#         self.online_eval_tp_2 = []
+#         self.online_eval_fp_2 = []
+#         self.online_eval_fn_2 = []
+#
+#
+#
+#
+#
+#         self.online_eval_tp_3 = np.sum(self.online_eval_tp_3, 0)
+#         self.online_eval_fp_3 = np.sum(self.online_eval_fp_3, 0)
+#         self.online_eval_fn_3 = np.sum(self.online_eval_fn_3, 0)
+#
+#         global_dc_per_class_3 = [i for i in [2 * i / (2 * i + j + k) for i, j, k in
+#                                            zip(self.online_eval_tp_3, self.online_eval_fp_3, self.online_eval_fn_3)]
+#                                if not np.isnan(i)]
+#         self.all_val_eval_metrics_3.append(np.mean(global_dc_per_class_3))
+#
+#         self.print_to_log_file("Average global foreground Dice (for Kidney):", str(global_dc_per_class_3))
+#         self.print_to_log_file("(interpret this as an estimate for the Dice of the different classes. This is not "
+#                                "exact.)")
+#
+#         self.online_eval_foreground_dc_3 = []
+#         self.online_eval_tp_3 = []
+#         self.online_eval_fp_3 = []
+#         self.online_eval_fn_3 = []
+
+
+
+
+
+
+
+
+
+
+
 
     def save_checkpoint(self, fname, save_optimizer=True):
         super(nnUNetTrainer, self).save_checkpoint(fname, save_optimizer)

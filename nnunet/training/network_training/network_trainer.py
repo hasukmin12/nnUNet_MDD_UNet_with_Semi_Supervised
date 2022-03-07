@@ -22,7 +22,7 @@ from nnunet.network_architecture.neural_network import SegmentationNetwork
 from sklearn.model_selection import KFold
 from torch import nn
 from torch.cuda.amp import GradScaler, autocast
-from torch.optim.lr_scheduler import _LRScheduler
+# from torch.optim.lr_scheduler import _LRScheduler
 
 matplotlib.use("agg")
 from time import time, sleep
@@ -110,6 +110,8 @@ class NetworkTrainer(object):
         self.all_val_losses = []
         self.all_val_losses_tr_mode = []
         self.all_val_eval_metrics = []  # does not have to be used
+        self.all_val_eval_metrics_2 = []
+        self.all_val_eval_metrics_3 = []
         self.epoch = 0
         self.log_file = None
         self.deterministic = deterministic
@@ -372,8 +374,8 @@ class NetworkTrainer(object):
                 'lr_scheduler_state_dict'] is not None:
                 self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler_state_dict'])
 
-            if issubclass(self.lr_scheduler.__class__, _LRScheduler):
-                self.lr_scheduler.step(self.epoch)
+            # if issubclass(self.lr_scheduler.__class__, _LRScheduler):
+            #     self.lr_scheduler.step(self.epoch)
 
         self.all_tr_losses, self.all_val_losses, self.all_val_losses_tr_mode, self.all_val_eval_metrics = checkpoint[
             'plot_stuff']
@@ -417,6 +419,8 @@ class NetworkTrainer(object):
         _ = self.tr_gen.next()
         _ = self.val_gen.next()
 
+
+
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
@@ -441,21 +445,32 @@ class NetworkTrainer(object):
             # train one epoch
             self.network.train()
 
-            if self.use_progress_bar:
-                with trange(self.num_batches_per_epoch) as tbar:
-                    for b in tbar:
-                        tbar.set_description("Epoch {}/{}".format(self.epoch+1, self.max_num_epochs))
+            # # 우린 progress bar 사용 안함
+            # if self.use_progress_bar:
+            #     with trange(self.num_batches_per_epoch) as tbar:
+            #         for b in tbar:
+            #             tbar.set_description("Epoch {}/{}".format(self.epoch+1, self.max_num_epochs))
+            #
+            #             l = self.run_iteration(self.tr_gen, True)
+            #
+            #             tbar.set_postfix(loss=l)
+            #             train_losses_epoch.append(l)
 
-                        l = self.run_iteration(self.tr_gen, True)
+            # 바로 여기로 보면 된다.
 
-                        tbar.set_postfix(loss=l)
-                        train_losses_epoch.append(l)
-            else:
-                for _ in range(self.num_batches_per_epoch):
-                    l = self.run_iteration(self.tr_gen, True)
+            for _ in range(self.num_batches_per_epoch):
+
+                # 여기에서 제대로 iteration이 돌아간다.
+                # 이때 사용되는 run_iteration은
+                # nnUNetTrainerV2_DP.run_iteration이 돌아간다.
+                l = self.run_iteration(self.tr_gen, True)
+                if l != 'nan':
                     train_losses_epoch.append(l)
+                else:
+                    print("there is non loss")
 
             self.all_tr_losses.append(np.mean(train_losses_epoch))
+            # print("len of batch : ", len(train_losses_epoch))
             self.print_to_log_file("train loss : %.4f" % self.all_tr_losses[-1])
 
             with torch.no_grad():
@@ -464,19 +479,24 @@ class NetworkTrainer(object):
                 val_losses = []
                 for b in range(self.num_val_batches_per_epoch):
                     l = self.run_iteration(self.val_gen, False, True)
-                    val_losses.append(l)
+                    if l != 'nan':
+                        val_losses.append(l)
+
                 self.all_val_losses.append(np.mean(val_losses))
                 self.print_to_log_file("validation loss: %.4f" % self.all_val_losses[-1])
 
-                if self.also_val_in_tr_mode:
-                    self.network.train()
-                    # validation with train=True
-                    val_losses = []
-                    for b in range(self.num_val_batches_per_epoch):
-                        l = self.run_iteration(self.val_gen, False)
-                        val_losses.append(l)
-                    self.all_val_losses_tr_mode.append(np.mean(val_losses))
-                    self.print_to_log_file("validation loss (train=True): %.4f" % self.all_val_losses_tr_mode[-1])
+
+                # # 이것도 안쓴다고 보면 된다.
+                # if self.also_val_in_tr_mode:
+                #     self.network.train()
+                #     # validation with train=True
+                #     val_losses = []
+                #     for b in range(self.num_val_batches_per_epoch):
+                #         l = self.run_iteration(self.val_gen, False)
+                #         val_losses.append(l)
+                #     self.all_val_losses_tr_mode.append(np.mean(val_losses))
+                #     print("also_val_in_train_mode!")
+                #     self.print_to_log_file("validation loss (train=True): %.4f" % self.all_val_losses_tr_mode[-1])
 
             self.update_train_loss_MA()  # needed for lr scheduler and stopping of training
 
@@ -623,19 +643,28 @@ class NetworkTrainer(object):
             self.train_loss_MA = self.train_loss_MA_alpha * self.train_loss_MA + (1 - self.train_loss_MA_alpha) * \
                                  self.all_tr_losses[-1]
 
+
+# 여기서 돌아가는게 아니었음 ㅋ
     def run_iteration(self, data_generator, do_backprop=True, run_online_evaluation=False):
         data_dict = next(data_generator)
         data = data_dict['data']
         target = data_dict['target']
 
-        data = maybe_to_torch(data)
-        target = maybe_to_torch(target)
+        print("")
+        print("data : ", data)
+        print("target : ", target)
+        print("")
+
+        # data = maybe_to_torch(data)
+        # target = maybe_to_torch(target)
 
         if torch.cuda.is_available():
             data = to_cuda(data)
             target = to_cuda(target)
 
         self.optimizer.zero_grad()
+
+        print("fp16 : ", self.fp16)
 
         if self.fp16:
             with autocast():
@@ -647,15 +676,28 @@ class NetworkTrainer(object):
                 self.amp_grad_scaler.scale(l).backward()
                 self.amp_grad_scaler.step(self.optimizer)
                 self.amp_grad_scaler.update()
-        else:
-            output = self.network(data)
-            del data
-            l = self.loss(output, target)
 
-            if do_backprop:
-                l.backward()
-                self.optimizer.step()
 
+        output = self.network(data)
+        # 아래처럼 적용하면 multi-task로 학습되겠지
+        # output1, output2, output3 = self.network(data)
+
+        del data
+
+        # 여기서 해당 target이 라벨이 없다면, output의 해당 값도 제거해주는식으로 loss를 잡으면 될거 같다.
+        # if target['1'] = 0:
+        #   output['1'] = 0
+        # 뭐 이런식으로 ㄱㄱ
+
+        l = self.loss(output, target)
+
+        print(l)
+
+        if do_backprop:
+            l.backward()
+            self.optimizer.step()
+
+        # 이건 거의 항상 False라고 보면 될 듯
         if run_online_evaluation:
             self.run_online_evaluation(output, target)
 
@@ -663,6 +705,9 @@ class NetworkTrainer(object):
 
         return l.detach().cpu().numpy()
 
+
+
+    # 쓸 일 없음
     def run_online_evaluation(self, *args, **kwargs):
         """
         Can be implemented, does not have to
@@ -671,7 +716,7 @@ class NetworkTrainer(object):
         :return:
         """
         pass
-
+    # 마찬가지
     def finish_online_evaluation(self):
         """
         Can be implemented, does not have to

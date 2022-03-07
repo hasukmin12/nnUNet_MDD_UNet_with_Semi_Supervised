@@ -52,7 +52,8 @@ class ExperimentPlanner(object):
         self.unet_base_num_features = Generic_UNet.BASE_NUM_FEATURES_3D
         self.unet_max_num_filters = 320
         self.unet_max_numpool = 999
-        self.unet_min_batch_size = 2
+        # self.unet_min_batch_size = 2
+        self.unet_min_batch_size = 4
         self.unet_featuremap_min_edge_length = 4
 
         self.target_spacing_percentile = 50
